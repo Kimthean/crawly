@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { CrawlArrayDto, CrawlDto } from './dto/create-crawl.dto';
-import * as puppeter from 'puppeteer';
+import { Crawl, CrawlDto } from './dto/create-crawl.dto';
+import * as puppeteer from 'puppeteer';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
 
 @Injectable()
 export class CrawlService {
-  async crawl(crawlDto: CrawlDto) {
+  async scrape(crawlDto: CrawlDto) {
     const { url } = crawlDto;
     try {
-      const browser = await puppeter.launch();
+      const browser = await puppeteer.launch();
       const page = await browser.newPage();
       await page.goto(url, { waitUntil: 'domcontentloaded' });
       const title = await page.evaluate(() => {
@@ -63,20 +63,60 @@ export class CrawlService {
     }
   }
 
-  async crawlMultiple(crawlDto: CrawlArrayDto) {
+  async crawl(crawlDto: Crawl) {
     const urls = crawlDto.url;
-    const responses = await Promise.all(urls.map((url) => this.crawl({ url })));
+    const responses = await Promise.all(
+      urls.map((url) => this.scrape({ url })),
+    );
 
-    // Convert the responses to JSONL format
     const jsonl = responses
       .map((response) => JSON.stringify(response))
       .join('\n');
 
     const filename = `${uuidv4()}_${new Date().toISOString().split('T')[0]}.jsonl`;
 
-    // Write the JSONL string to a file
-    fs.writeFileSync(path.join(__dirname, filename), jsonl + '\n');
+    const filePath = path.join(process.cwd(), 'data', filename);
+    fs.writeFileSync(filePath, jsonl + '\n');
 
     return `JSONL file has been saved with filename: ${filename}`;
+  }
+
+  async CrawlLinks(crawlDto: CrawlDto) {
+    try {
+      const { url } = crawlDto;
+
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+      await page.goto(url, { waitUntil: 'networkidle2' });
+
+      let links = [];
+      while (links.length < 40) {
+        const newLinks = await page.evaluate(() => {
+          const elements = Array.from(
+            document.querySelectorAll('.section-more a'),
+          );
+          return elements.map((element) => element.getAttribute('href'));
+        });
+
+        links = Array.from(new Set(links.concat(newLinks)));
+
+        if (links.length < 8) {
+          await page.waitForSelector('.load-more .btn-load');
+
+          await Promise.all([
+            page.click('.load-more .btn-load'),
+            page.waitForNavigation({
+              waitUntil: 'networkidle2',
+              timeout: null,
+            }),
+          ]);
+        }
+      }
+
+      await browser.close();
+      return links.slice(0, 8);
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

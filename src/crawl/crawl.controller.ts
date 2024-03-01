@@ -1,18 +1,18 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { CrawlService } from './crawl.service';
-import { CrawlArrayDto, CrawlDto } from './dto/create-crawl.dto';
+import { Crawl, CrawlDto } from './dto/create-crawl.dto';
 
 @Controller('crawl')
 export class CrawlController {
   constructor(private readonly crawlService: CrawlService) {}
 
   @Post()
-  async crawl(@Body() crawlDto: CrawlDto) {
+  async crawlArray(@Body() crawlDto: Crawl) {
     return this.crawlService.crawl(crawlDto);
   }
 
-  @Post('array')
-  async crawlArray(@Body() crawlDto: CrawlArrayDto) {
-    return this.crawlService.crawlMultiple(crawlDto);
+  @Post('get-urls')
+  async getUrls(@Body() crawlDto: CrawlDto) {
+    return this.crawlService.CrawlLinks(crawlDto);
   }
 }

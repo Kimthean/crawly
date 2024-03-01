@@ -8,7 +8,7 @@ export class CrawlDto {
   url: string;
 }
 
-export class CrawlArrayDto {
+export class Crawl {
   @ApiProperty()
   @IsString({ each: true })
   url: string[];
