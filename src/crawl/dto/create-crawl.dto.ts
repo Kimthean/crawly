@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { IsUrl } from 'class-validator';
+import { IsString, IsUrl } from 'class-validator';
 
 export class CrawlDto {
   @ApiProperty()
@@ -8,8 +8,8 @@ export class CrawlDto {
   url: string;
 }
 
-export class FetchDto {
+export class CrawlArrayDto {
   @ApiProperty()
-  @IsUrl()
-  url: string;
+  @IsString({ each: true })
+  url: string[];
 }

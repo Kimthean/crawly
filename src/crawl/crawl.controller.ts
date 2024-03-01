@@ -1,6 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { CrawlService } from './crawl.service';
-import { CrawlDto } from './dto/create-crawl.dto';
+import { CrawlArrayDto, CrawlDto } from './dto/create-crawl.dto';
 
 @Controller('crawl')
 export class CrawlController {
@@ -9,5 +9,10 @@ export class CrawlController {
   @Post()
   async crawl(@Body() crawlDto: CrawlDto) {
     return this.crawlService.crawl(crawlDto);
+  }
+
+  @Post('array')
+  async crawlArray(@Body() crawlDto: CrawlArrayDto) {
+    return this.crawlService.crawlMultiple(crawlDto);
   }
 }
